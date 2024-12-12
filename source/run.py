@@ -22,17 +22,16 @@ if __name__ == "__main__":
     plt.show()
 
     # Process next frames
-    for frame_no in range(1, 3):
+    N=5
+    for frame_no in range(1, N+1):
         curr_frame_BGR = dataset_reader.readFrame(frame_no)
         prev_frame = cv2.cvtColor(prev_frame_BGR, cv2.COLOR_BGR2GRAY)
         curr_frame = cv2.cvtColor(curr_frame_BGR, cv2.COLOR_BGR2GRAY)
 
         # Feature detection & filtering
-        prev_points = detector.detect(prev_frame) # tuple of 
-        print("first:"+str(type(prev_points[0])))
-        prev_points = cv2.KeyPoint_convert(sorted(prev_points, key = lambda p: p.response, reverse=True))
-        print(type(prev_points[0]))
-    
+        prev_points = detector.detect(prev_frame) # tuple of cv2.KeyPoint
+        prev_points = cv2.KeyPoint_convert(sorted(prev_points, key = lambda p: p.response, reverse=True)) # numpy.ndarray of numpy.ndarray
+
         # Feature tracking (optical flow)
         prev_points, curr_points = tracker.trackFeatures(prev_frame, curr_frame, prev_points, removeOutliers=True)
         print (f"{len(curr_points)} features left after feature tracking.")
@@ -56,6 +55,15 @@ if __name__ == "__main__":
         track_positions.append(camera_pos)
         updateTrajectoryDrawing(np.array(track_positions), np.array(kitti_positions))
         drawFrameFeatures(curr_frame, prev_points, curr_points, frame_no)
+
+        if frame_no == N:
+            plt.cla()
+            plt.plot(np.array(track_positions)[:,0], np.array(track_positions)[:,2], c='blue', label="Tracking")
+            plt.plot(np.array(kitti_positions)[:,0], np.array(kitti_positions)[:,2], c='green', label="Ground truth")
+            plt.title("Trajectory")
+            plt.legend()
+            plt.draw()
+            plt.savefig("../results/trajectories.png")
 
         if cv2.waitKey(1) == ord('q'):
             break

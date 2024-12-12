@@ -9,8 +9,8 @@ import numpy as np
 def drawFrameFeatures(frame, prevPts, currPts, frameIdx):
     currFrameRGB = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
     for i in range(len(currPts)-1):
-        cv2.circle(currFrameRGB, currPts[i].astype(np.uint8), radius=3, color=(200, 100, 0))
-        cv2.line(currFrameRGB, prevPts[i].astype(np.uint8), currPts[i].astype(np.uint8), color=(200, 100, 0))
+        cv2.circle(currFrameRGB, (int(currPts[i][0]),int(currPts[i][1])), radius=3, color=(200, 100, 0))
+        cv2.line(currFrameRGB, (int(prevPts[i][0]),int(prevPts[i][1])), (int(currPts[i][0]),int(currPts[i][1])), color=(200, 100, 0))
         cv2.putText(currFrameRGB, "Frame: {}".format(frameIdx), (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200))
         cv2.putText(currFrameRGB, "Features: {}".format(len(currPts)), (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200))    
     cv2.imshow("Frame with keypoints", currFrameRGB)
