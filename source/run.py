@@ -2,15 +2,25 @@ import cv2
 import plyfile
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
 
 from kitti_reader import DatasetReaderKITTI
 from feature_tracking import FeatureTracker
 from utils import drawFrameFeatures, updateTrajectoryDrawing, savePly
 
 if __name__ == "__main__":
+
+    if len(sys.argv) != 2:
+        print('Must specify sequence: python run.py seq with seq in [00,01,...,11]')
+        sys.exit()
+    seq = sys.argv[1]
+    if seq not in ['00','01','02','03','04','05','06','07','08','09','10','11']:
+        print('Sequence must be in [00,01,...,11]')
+        sys.exit()
+
     tracker = FeatureTracker()
     detector = cv2.GFTTDetector_create()
-    dataset_reader = DatasetReaderKITTI("../../data/")
+    dataset_reader = DatasetReaderKITTI("../../data/", seq)
 
     K = dataset_reader.readCameraMatrix()
 
@@ -22,8 +32,9 @@ if __name__ == "__main__":
     plt.show()
 
     # Process next frames
-    N=5
-    for frame_no in range(1, N+1):
+    N = dataset_reader.number_images()
+    for frame_no in range(1, N):
+        print(f"Processing frame {frame_no}")
         curr_frame_BGR = dataset_reader.readFrame(frame_no)
         prev_frame = cv2.cvtColor(prev_frame_BGR, cv2.COLOR_BGR2GRAY)
         curr_frame = cv2.cvtColor(curr_frame_BGR, cv2.COLOR_BGR2GRAY)
@@ -34,14 +45,24 @@ if __name__ == "__main__":
 
         # Feature tracking (optical flow)
         prev_points, curr_points = tracker.trackFeatures(prev_frame, curr_frame, prev_points, removeOutliers=True)
-        print (f"{len(curr_points)} features left after feature tracking.")
+        #print (f"{len(curr_points)} features left after feature tracking.")
 
         # Essential matrix, pose estimation
         E, mask = cv2.findEssentialMat(curr_points, prev_points, K, cv2.RANSAC, 0.99, 1.0, None)
         prev_points = np.array([pt for (idx, pt) in enumerate(prev_points) if mask[idx] == 1])
         curr_points = np.array([pt for (idx, pt) in enumerate(curr_points) if mask[idx] == 1])
         _, R, T, _ = cv2.recoverPose(E, curr_points, prev_points, K)
-        print(f"{len(curr_points)} features left after pose estimation.")
+        #print(f"{len(curr_points)} features left after pose estimation.")
+
+        if frame_no == N-1:
+            print("Plotting last frame...")
+            plt.cla()
+            plt.plot(np.array(track_positions)[:,0], np.array(track_positions)[:,2], c='blue', label="Tracking")
+            plt.plot(np.array(kitti_positions)[:,0], np.array(kitti_positions)[:,2], c='green', label="Ground truth")
+            plt.title("Trajectory")
+            plt.legend()
+            plt.draw()
+            plt.savefig("../results/trajectories_"+seq+".png")
 
         # Read groundtruth translation T and absolute scale for computing trajectory
         kitti_pos, kitti_scale = dataset_reader.readGroundtuthPosition(frame_no)
@@ -53,17 +74,8 @@ if __name__ == "__main__":
 
         kitti_positions.append(kitti_pos)
         track_positions.append(camera_pos)
-        updateTrajectoryDrawing(np.array(track_positions), np.array(kitti_positions))
-        drawFrameFeatures(curr_frame, prev_points, curr_points, frame_no)
-
-        if frame_no == N:
-            plt.cla()
-            plt.plot(np.array(track_positions)[:,0], np.array(track_positions)[:,2], c='blue', label="Tracking")
-            plt.plot(np.array(kitti_positions)[:,0], np.array(kitti_positions)[:,2], c='green', label="Ground truth")
-            plt.title("Trajectory")
-            plt.legend()
-            plt.draw()
-            plt.savefig("../results/trajectories.png")
+        #updateTrajectoryDrawing(np.array(track_positions), np.array(kitti_positions))
+        #drawFrameFeatures(curr_frame, prev_points, curr_points, frame_no)
 
         if cv2.waitKey(1) == ord('q'):
             break

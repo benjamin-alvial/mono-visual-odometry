@@ -4,13 +4,13 @@ import numpy as np
 from math import isnan, sqrt
 
 class DatasetReaderKITTI:
-    def __init__(self, datasetPath, scaling=1.0):
+    def __init__(self, datasetPath, seq, scaling=1.0):
         #__location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
         #self._datasetPath = os.path.join(__location__, datasetPath)
         self._datasetPath = datasetPath
-        self._imagesPath = os.path.join(self._datasetPath, "data_odometry_gray/dataset/sequences/00/image_0")
-        self._calibPath = os.path.join(self._datasetPath, "data_odometry_gray/dataset/sequences/00")
-        self._posesPath = os.path.join(self._datasetPath, "data_odometry_poses/dataset/poses/00.txt")
+        self._imagesPath = os.path.join(self._datasetPath, "data_odometry_gray/dataset/sequences/"+seq+"/image_0")
+        self._calibPath = os.path.join(self._datasetPath, "data_odometry_gray/dataset/sequences/"+seq)
+        self._posesPath = os.path.join(self._datasetPath, "data_odometry_poses/dataset/poses/"+seq+".txt")
         self._numFrames = len([x for x in os.listdir(self._imagesPath) if x.endswith(".png")])
         self._scaling = scaling
 
@@ -18,6 +18,9 @@ class DatasetReaderKITTI:
             raise Exception("Not enough images ({}) found, aborting.".format(frameReader.getFramesCount()))
         else:
             print("Found {} images in {}".format(self._numFrames, self._imagesPath))
+
+    def number_images(self):
+        return self._numFrames 
 
     def readFrame(self, index=0):
         if index >= self._numFrames:

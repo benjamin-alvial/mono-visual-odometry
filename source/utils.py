@@ -25,7 +25,7 @@ def updateTrajectoryDrawing(trackedPoints, groundtruthPoints):
     plt.title("Trajectory")
     plt.legend()
     plt.draw()
-    plt.pause(0.01)
+    plt.pause(0.001)
 
 def savePly(points, colors, output_file):
     vertexes = [ (p[0], p[1], p[2], c[0], c[1], c[2]) for p, c in zip(points, colors)]
