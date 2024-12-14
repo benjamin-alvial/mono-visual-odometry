@@ -2,6 +2,8 @@ import os
 import cv2
 import numpy as np
 from math import isnan, sqrt
+from PIL import Image
+import torch
 
 class DatasetReaderKITTI:
     def __init__(self, datasetPath, seq, scaling=1.0):
@@ -22,12 +24,30 @@ class DatasetReaderKITTI:
     def number_images(self):
         return self._numFrames 
 
-    def readFrame(self, index=0):
+    def readFrame(self, index=0, option="General"):
         if index >= self._numFrames:
             raise Exception("Cannot read frame number {} from {}".format(index, self._imagesPath))
 
-        img = cv2.imread(os.path.join(self._imagesPath, "{:06d}.png".format(index)))
-        img = cv2.resize(img, (int(img.shape[1] * self._scaling), int(img.shape[0] * self._scaling)))
+        img_path = os.path.join(self._imagesPath, "{:06d}.png".format(index))
+
+        if option == "General":
+            img = cv2.imread(img_path)
+            img = cv2.resize(img, (int(img.shape[1] * self._scaling), int(img.shape[0] * self._scaling)))
+
+        elif option == "U-Net":
+            img = Image.open(img_path)
+            img = img.convert('RGB')
+            img = np.asarray(img)
+            img = img.transpose((2, 0, 1))
+            img = img / 255.0
+            img =  torch.as_tensor(img.copy()).float().contiguous()
+            img_size = img.size() # 3xHxW
+            img = img.reshape((1,img_size[0],img_size[1],img_size[2])) # 1x12xHxW
+            print(img.size)
+
+        else:
+            raise Exception("Option must be General or U-Net")
+
         return img
 
     def readCameraMatrix(self):

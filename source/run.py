@@ -10,6 +10,11 @@ from utils import drawFrameFeatures, updateTrajectoryDrawing, savePly
 
 from SuperPointPretrainedNetwork.demo_superpoint import SuperPointFrontend
 
+from PIL import Image
+
+from UNet.unet_model import UNet
+import torch
+
 if __name__ == "__main__":
 
     if len(sys.argv) != 2:
@@ -19,6 +24,16 @@ if __name__ == "__main__":
     if seq not in ['00','01','02','03','04','05','06','07','08','09','10','11']:
         print('Sequence must be in [00,01,...,11]')
         sys.exit()
+
+    # Initialize pre-trained U-Net for inference
+    checkpoint_file = 'UNet/checkpoint_epoch7.pth'
+    net = UNet(n_channels=3, n_classes=12, bilinear=True)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    net.to(device=device)
+    state_dict = torch.load(checkpoint_file, map_location=device)
+    mask_values = state_dict.pop('mask_values', [0, 1])
+    net.load_state_dict(state_dict)
+    net.cpu()
 
     # Initialize the SuperPoint model for SuperPoint keypoints
     weights_path = 'SuperPointPretrainedNetwork/superpoint_v1.pth'
@@ -48,9 +63,16 @@ if __name__ == "__main__":
 
     for frame_no in range(1, N):
         print(f"Processing frame {frame_no}")
-        curr_frame_BGR = dataset_reader.readFrame(frame_no)
+        curr_frame_BGR = dataset_reader.readFrame(frame_no, "General")
         curr_frame = cv2.cvtColor(curr_frame_BGR, cv2.COLOR_BGR2GRAY)
         prev_frame = cv2.cvtColor(prev_frame_BGR, cv2.COLOR_BGR2GRAY)
+
+        curr_frame_UNet = dataset_reader.readFrame(frame_no, "U-Net")
+        img_pred = net.forward(curr_frame_UNet) # 1x12xHxW
+        img_pred = img_pred.detach().numpy()
+        img_pred = img_pred.squeeze(0) # 12xHxW
+        img_pred = np.transpose(img_pred, (1, 2, 0))
+        img_pred = np.argmax(img_pred, 2)
 
         # Detection with GFTT
         prev_points_gftt = detector.detect(prev_frame) # tuple of cv2.KeyPoint
