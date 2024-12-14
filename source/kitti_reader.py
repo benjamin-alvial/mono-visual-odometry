@@ -44,9 +44,9 @@ class DatasetReaderKITTI:
             K[2, 2] = 1
             return K
 
-    def readGroundtuthPosition(self, frameId):
-        groundtruthFile = os.path.join(self._posesPath)
-        with open(groundtruthFile) as f:
+    def readGroundTruthPosition(self, frameId):
+        groundTruthFile = os.path.join(self._posesPath)
+        with open(groundTruthFile) as f:
             lines = f.readlines()
 
             _, _, _, tx, _, _, _, ty, _, _, _, tz = list(map(float, lines[frameId].rstrip().split(" ")))
