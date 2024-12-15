@@ -68,7 +68,7 @@ if __name__ == "__main__":
             3: 1.0/12, #construction
             4: 1.0/12, #pole(s)
             5: 1.0/12, #traffic sign
-            6: 1.0/12, #vegatation
+            6: 1.0/12, #vegetation
             7: 1.0/12, #sky
             8: 1.0/12, #human
             9: 1.0/12, # vehicle
